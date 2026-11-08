@@ -1,0 +1,90 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}旅游攻略 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="guide-hero-cartoon">
+            <div>
+                <p>Travel Notes</p>
+                <h1>旅游攻略社区</h1>
+                <span>共收录 {{ total_count }} 篇攻略，可以搜索目的地、标题和正文，查看其他用户的旅行经验。</span>
+            </div>
+              <a class="guide-create-link-cartoon" href="{% url 'guides:guide_create' %}">发布攻略</a>
+        </section>
+
+        <section class="filter-card-cartoon">
+            <form class="guide-filter-form-cartoon" method="get">
+                <label>
+                    <span>关键词</span>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="标题、城市、摘要或正文">
+                </label>
+                <label>
+                    <span>城市</span>
+                    <select name="city">
+                        <option value="">全部城市</option>
+                        {% for item in city_options %}
+                            <option value="{{ item }}" {% if city == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button class="filter-button-cartoon" type="submit">搜索</button>
+                <a class="reset-button-cartoon" href="{% url 'guides:guide_list' %}">重置</a>
+            </form>
+        </section>
+
+        <section class="guide-grid-cartoon">
+            {% for guide in page_obj %}
+                <article class="guide-card-cartoon">
+                     <a class="guide-cover-cartoon" href="{% url 'guides:guide_detail' guide.id %}">
+                        {% with cover=guide.images.all.0 %}
+                            {% if cover %}
+                                <img src="{{ cover.image.url }}" alt="{{ guide.title }}">
+                            {% else %}
+                                <span>{{ guide.city|first }}</span>
+                            {% endif %}
+                        {% endwith %}
+                    </a>
+                    <div class="guide-card-body-cartoon">
+                        <div class="guide-meta-row-cartoon">
+                            <span>{{ guide.city }}</span>
+                            <strong>{{ guide.view_count }} 浏览</strong>
+                        </div>
+                        {% if guide.guide_attractions.all %}
+                        <div class="guide-spot-row-cartoon">
+                            {% for link in guide.guide_attractions.all|slice:":3" %}
+                                <span>{{ link.attraction.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        <h2>{{ guide.title }}</h2>
+                        <p>{{ guide.summary }}</p>
+                        <div class="guide-card-footer-cartoon">
+                            <span>{{ guide.author.username }} · {{ guide.created_at|date:'Y-m-d' }}</span>
+                              <a href="{% url 'guides:guide_detail' guide.id %}">查看攻略</a>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-card-cartoon guide-empty-cartoon">
+                    <strong>还没有旅游攻略</strong>
+                    <span>发布第一篇攻略，分享你的旅行路线和避坑经验。</span>
+                    <a href="{% url 'guides:guide_create' %}">去发布</a>
+                </div>
+            {% endfor %}
+        </section>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination-cartoon">
+                {% if page_obj.has_previous %}
+                    <a href="?keyword={{ keyword|urlencode }}&city={{ city|urlencode }}&page={{ page_obj.previous_page_number }}">上一页</a>
+                {% endif %}
+                <span>第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页</span>
+                {% if page_obj.has_next %}
+                    <a href="?keyword={{ keyword|urlencode }}&city={{ city|urlencode }}&page={{ page_obj.next_page_number }}">下一页</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}个人中心 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="profile-hero-cartoon">
+            <div>
+                <p>User Center</p>
+                <h1>个人中心</h1>
+                <span>管理个人资料、收藏景点、发布攻略和 AI 路线规划记录。</span>
+            </div>
+            <div class="profile-quick-links-cartoon">
+               <a href="{% url 'accounts:my_favorites' %}">我的收藏</a>
+                <a href="{% url 'accounts:my_guides' %}">我的攻略</a>
+            </div>
+        </section>
+
+        {% if messages %}
+            <section class="message-list-cartoon">
+                {% for message in messages %}
+                    <p class="message-item-cartoon {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <section class="profile-grid-cartoon">
+            <article class="profile-card-cartoon">
+                <div class="profile-avatar-large-cartoon">
+                    {% if user.avatar %}
+                        <img src="{{ user.avatar.url }}" alt="{{ user.username }}">
+                    {% else %}
+                        <span>{{ user.username|first|upper }}</span>
+                    {% endif %}
+                </div>
+                <div class="profile-user-copy-cartoon">
+                    <p>{{ user.date_joined|date:'Y-m-d' }} 加入</p>
+                    <h2>{{ user.username }}</h2>
+                    <span>{{ user.email|default:'暂未填写邮箱' }}</span>
+                </div>
+            </article>
+
+            <article class="profile-form-card-cartoon">
+                <div class="planner-card-heading-cartoon">
+                    <p>Profile</p>
+                    <h2>资料设置</h2>
+                </div>
+
+                {% if errors %}
+                    <div class="message-list-cartoon">
+                        {% for error in errors %}
+                            <p class="message-item-cartoon error">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <form class="profile-form-cartoon" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label>
+                        <span>用户名</span>
+                        <input type="text" name="username" value="{{ form_data.username }}" maxlength="150">
+                    </label>
+                    <label>
+                        <span>邮箱</span>
+                        <input type="email" name="email" value="{{ form_data.email }}" maxlength="254">
+                    </label>
+                    <label>
+                        <span>头像</span>
+                        <input class="guide-file-input-cartoon" type="file" name="avatar" accept="image/jpeg,image/png,image/webp,image/gif">
+                    </label>
+                    <button class="primary-button profile-submit-cartoon" type="submit">保存资料</button>
+                </form>
+            </article>
+        </section>
+
+    </main>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}旅游景点 - 旅游规划平台{% endblock %}
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="travel-hero-cartoon">
+            <div>
+                <p>Scenic Spots</p>
+                <h1>旅游景点库</h1>
+                <span>共收录  {{ total_count }}  个符合条件的景点，支持按关键词、城市和门票类型筛选。</span>
+            </div>
+        </section>
+
+        <section class="filter-card-cartoon">
+            <form class="filter-form-cartoon" method="get">
+                <label>
+                    <span>关键词</span>
+                    <input type="text" name="keyword" value="{{ keyword }}" placeholder="景点、标签或区域">
+                </label>
+                <label>
+                    <span>城市</span>
+                    <select name="city">
+                        <option value="">全部城市</option>
+                        {% for item in city_options %}
+                            <option value="{{ item }}"{% if city == item %}selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    <span>门票</span>
+                    <select name="is_free">
+                        <option value="">全部</option>
+                        <option value="1"{% if is_free == '1' %}selected{% endif %}>免费</option>
+                        <option value="0"{% if is_free == '0' %}selected{% endif %}>收费</option>
+                    </select>
+                </label>
+                <button class="filter-button-cartoon" type="submit">筛选</button>
+                <a class="reset-button-cartoon" href="{% url 'travel:attraction_list' %}">重置</a>
+            </form>
+        </section>
+
+        <section class="attraction-grid-cartoon">
+            {% for attraction in page_obj %}
+                <article class="attraction-card-cartoon">
+                    <a class="spot-cover-cartoon" href="{% url 'travel:attraction_detail' attraction.poi_id %}">
+                        {% if attraction.image %}
+                            <img src="{{ attraction.image }}" alt="{{ attraction.name }}">
+                        {% else %}
+                            <span>{{ attraction.name|first }}</span>
+                        {% endif %}
+                    </a>
+                    <div class="spot-body-cartoon">
+                        <div class="spot-title-row-cartoon">
+                            <h2>{{ attraction.name }}</h2>
+                            <span class="score-pill-cartoon">{{ attraction.score|floatformat:1 }}</span>
+                        </div>
+                        <div class="spot-meta-cartoon">
+                            <span>{{ attraction.city_name }}</span>
+                            {% if attraction.area %}
+                                <span>{{ attraction.area }}</span>
+                            {% endif %}
+                        </div>
+                        {% if attraction.tags %}
+                            <p class="spot-tags-cartoon">{{ attraction.tags_display }}</p>
+                        {% endif %}
+                        <div class="spot-stat-row-cartoon">
+                            <span>热度 {{ attraction.heat_score|default:'暂无' }}</span>
+                            <span>评论 {{ attraction.comment_count|default:'0'|floatformat:0 }}</span>
+                        </div>
+                        <div class="spot-footer-cartoon">
+                            <span class="{% if attraction.is_free %}free-pill-cartoon{% else %}price-pill-cartoon{% endif %}">
+                                {% if attraction.is_free %}免费{% else %}{{ attraction.actual_price }}{% endif %}
+                            </span>
+                            <a href="{% url 'travel:attraction_detail' attraction.poi_id %}">查看详情</a>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-card-cartoon">
+                    <strong>没有找到景点</strong>
+                    <span>换个关键词或城市再试试。</span>
+                </div>
+            {% endfor %}
+        </section>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination-cartoon">
+                {% if page_obj.has_previous %}
+                    <a href="{{ page_query_prefix }}page={{ page_obj.previous_page_number }}">上一页</a>
+                {% endif %}
+                <div class="pagination-page-list-cartoon">
+                    {% for item in pagination_items %}
+                        {% if item == page_obj.number %}
+                            <span class="pagination-page-cartoon active">{{ item }}</span>
+                        {% else %}
+                            <a class="pagination-page-cartoon"
+                               href="{{ page_query_prefix }}page={{ item }}">{{ item }}</a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <span class="pagination-total-cartoon">第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页</span>
+                {% if page_obj.has_next %}
+                    <a href="{{ page_query_prefix }}page={{ page_obj.next_page_number }}">下一页</a>
+                {% endif %}
+                <form class="pagination-jump-cartoon" method="get">
+                    <input type="hidden" name="keyword" value="{{ keyword }}">
+                    <input type="hidden" name="city" value="{{ city }}">
+                    <input type="hidden" name="is_free" value="{{ is_free }}">
+                    <span>跳至</span>
+                    <input type="number" name="page" min="1" max="{{ page_obj.paginator.num_pages }}"
+                           value="{{ page_obj.number }}">
+                    <span>页</span>
+                    <button type="submit">跳转</button>
+                </form>
+            </nav>
+        {% endif %}
+    </main>
+
+{% endblock %}

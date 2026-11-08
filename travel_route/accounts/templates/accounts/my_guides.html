@@ -1,0 +1,73 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}我的攻略 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="profile-hero-cartoon">
+            <div>
+                <p>My Guides</p>
+                <h1>我的攻略</h1>
+                <span>共发布 {{ total_count }} 篇攻略，可以查看自己发布的路线经验。</span>
+            </div>
+            <div class="profile-quick-links-cartoon">
+                <a href="{% url 'guides:guide_create' %}">发布攻略</a>
+                <a href="{% url 'accounts:profile' %}">返回个人中心</a>
+            </div>
+        </section>
+
+        <section class="guide-grid-cartoon">
+            {% for guide in page_obj %}
+                <article class="guide-card-cartoon">
+                    <a class="guide-cover-cartoon" href="{% url 'guides:guide_detail' guide.id %}">
+                        {% with cover=guide.images.all.0 %}
+                            {% if cover %}
+                                <img src="{{ cover.image.url }}" alt="{{ guide.title }}">
+                            {% else %}
+                                <span>{{ guide.city|first }}</span>
+                            {% endif %}
+                        {% endwith %}
+                    </a>
+                    <div class="guide-card-body-cartoon">
+                        <div class="guide-meta-row-cartoon">
+                            <span>{{ guide.city }}</span>
+                            <strong>{{ guide.view_count }} 浏览</strong>
+                        </div>
+                        {% if guide.guide_attractions.all %}
+                            <div class="guide-spot-row-cartoon">
+                                {% for link in guide.guide_attractions.all|slice:":3" %}
+                                    <span>{{ link.attraction.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <h2>{{ guide.title }}</h2>
+                        <p>{{ guide.summary }}</p>
+                        <div class="guide-card-footer-cartoon">
+                            <span>{{ guide.created_at|date:'Y-m-d H:i' }}</span>
+                            <a href="{% url 'guides:guide_detail' guide.id %}">查看攻略</a>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-card-cartoon guide-empty-cartoon">
+                    <strong>暂无发布攻略</strong>
+                    <span>发布第一篇攻略，记录你的旅行经验。</span>
+                    <a href="{% url 'guides:guide_create' %}">去发布</a>
+                </div>
+            {% endfor %}
+        </section>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination-cartoon">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                {% endif %}
+                <span>第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 页</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">下一页</a>
+                {% endif %}
+            </nav>
+        {% endif %}
+    </main>
+{% endblock %}

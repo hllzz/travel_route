@@ -1,0 +1,72 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}我的收藏 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="profile-hero-cartoon">
+            <div>
+                <p>Favorites</p>
+                <h1>我的收藏</h1>
+                <span>共收藏 {{ total_count }} 个景点，可以进入详情页查看或取消收藏。</span>
+            </div>
+            <a class="guide-create-link-cartoon" href="{% url 'accounts:profile' %}">返回个人中心</a>
+        </section>
+
+        {% if messages %}
+            <section class="message-list-cartoon">
+                {% for message in messages %}
+                    <p class="message-item-cartoon {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <section class="attraction-grid-cartoon">
+            {% for favorite in page_obj %}
+                <article class="attraction-card-cartoon">
+                    <a class="spot-cover-cartoon" href="{% url 'travel:attraction_detail' favorite.attraction.poi_id %}">
+                        {% if favorite.attraction.image %}
+                            <img src="{{ favorite.attraction.image }}" alt="{{ favorite.attraction.name }}">
+                        {% else %}
+                            <span>{{ favorite.attraction.name|first }}</span>
+                        {% endif %}
+                    </a>
+                    <div class="spot-body-cartoon">
+                        <div class="spot-title-row-cartoon">
+                            <h2>{{ favorite.attraction.name }}</h2>
+                            <span class="score-pill-cartoon">{{ favorite.attraction.score|floatformat:1 }}</span>
+                        </div>
+                        <div class="spot-meta-cartoon">
+                            <span>{{ favorite.attraction.city_name }}</span>
+                            {% if favorite.attraction.area %}
+                                <span>{{ favorite.attraction.area }}</span>
+                            {% endif %}
+                        </div>
+                        {% if favorite.attraction.tags %}
+                            <p class="spot-tags-cartoon">{{ favorite.attraction.tags_display }}</p>
+                        {% endif %}
+                        <div class="spot-stat-row-cartoon">
+                            <span>收藏于 {{ favorite.created_at|date:'Y-m-d' }}</span>
+                            <span>热度 {{ favorite.attraction.heat_score|default:'暂无' }}</span>
+                        </div>
+                        <div class="profile-card-actions-cartoon">
+                            <a href="{% url 'travel:attraction_detail' favorite.attraction.poi_id %}">查看详情</a>
+                            <form method="post" action="{% url 'accounts:remove_favorite' favorite.id %}">
+                                {% csrf_token %}
+                                <button type="submit">取消收藏</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-card-cartoon">
+                    <strong>暂无收藏景点</strong>
+                    <span>进入景点详情页收藏你喜欢的目的地。</span>
+                    <a href="{% url 'travel:attraction_list' %}">去看景点</a>
+                </div>
+            {% endfor %}
+        </section>
+
+    </main>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ guide.title }} - 旅游攻略{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="guide-detail-hero-cartoon">
+            <div class="guide-detail-cover-cartoon">
+                {% with cover=guide_images.0 %}
+                    {% if cover %}
+                        <img src="{{ cover.image.url }}" alt="{{ guide.title }}">
+                    {% else %}
+                        <span>{{ guide.city|first }}</span>
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <div class="guide-detail-summary-cartoon">
+                <a class="back-link-cartoon" href="{% url 'guides:guide_list' %}">返回攻略社区</a>
+                <p>{{ guide.city }}</p>
+                <h1>{{ guide.title }}</h1>
+                <div class="guide-detail-meta-cartoon">
+                    <span>作者 {{ guide.author.username }}</span>
+                    <span>{{ guide.created_at|date:'Y-m-d H:i' }}</span>
+                    <span>{{ guide.view_count }} 浏览</span>
+                </div>
+                <strong>{{ guide.summary }}</strong>
+            </div>
+        </section>
+
+        <section class="guide-content-layout-cartoon">
+            <article class="guide-content-card-cartoon">
+                {% if guide_images %}
+                    <div class="guide-gallery-cartoon">
+                        {% for image in guide_images %}
+                            <figure>
+                                <img src="{{ image.image.url }}" alt="{{ guide.title }} 图片 {{ forloop.counter }}">
+                            </figure>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="planner-card-heading-cartoon">
+                    <p>Guide Content</p>
+                    <h2>攻略正文</h2>
+                </div>
+                <div class="guide-content-text-cartoon">
+                    {{ guide.content|linebreaksbr }}
+                </div>
+            </article>
+
+            <aside class="guide-side-card-cartoon">
+                <h2>攻略信息</h2>
+                <dl>
+                    <div>
+                        <dt>目的地</dt>
+                        <dd>{{ guide.city }}</dd>
+                    </div>
+                    <div>
+                        <dt>关联景点</dt>
+                        <dd>
+                            {% for link in guide_attractions %}
+                                <a class="guide-spot-link-cartoon" href="{% url 'travel:attraction_detail' link.attraction.poi_id %}">
+                                    {{ link.attraction.name }}
+                                </a>
+                            {% empty %}
+                                暂无
+                            {% endfor %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>作者</dt>
+                        <dd>{{ guide.author.username }}</dd>
+                    </div>
+                    <div>
+                        <dt>浏览量</dt>
+                        <dd>{{ guide.view_count }}</dd>
+                    </div>
+                    <div>
+                        <dt>发布时间</dt>
+                        <dd>{{ guide.created_at|date:'Y-m-d H:i' }}</dd>
+                    </div>
+                    <div>
+                        <dt>最后更新</dt>
+                        <dd>{{ guide.updated_at|date:'Y-m-d H:i' }}</dd>
+                    </div>
+                </dl>
+                  <a class="guide-side-action-cartoon" href="{% url 'guides:guide_create' %}">发布攻略</a>
+            </aside>
+        </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}{{ attraction.name }} - 旅游景点{% endblock %}
+
+{% block content %}
+    <main class="attraction-detail-shell-cartoon">
+        <section class="attraction-detail-hero-cartoon">
+            <div class="attraction-detail-cover-cartoon">
+                {% if attraction.image %}
+                    <img src="{{ attraction.image }}" alt="{{ attraction.name }}">
+                {% else %}
+                    <span>{{ attraction.name|first }}</span>
+                {% endif %}
+            </div>
+
+            <div class="attraction-detail-summary-cartoon">
+                <a class="back-link-cartoon" href="{% url 'travel:attraction_list' %}">返回景点库</a>
+                <p class="attraction-detail-location-cartoon">{{ attraction.city_name }}{% if attraction.area %} · {{ attraction.area }}{% endif %}</p>
+                <h1>{{ attraction.name }}</h1>
+
+                {% if attraction.tags_list %}
+                    <div class="attraction-detail-tags-cartoon">
+                        {% for tag in attraction.tags_list %}
+                            <span class="detail-tag-pill-cartoon">{{ tag }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="attraction-detail-stats-cartoon">
+                    <span class="detail-stat-pill-cartoon stat-score">评分 {{ attraction.score|floatformat:1 }}</span>
+                    <span class="detail-stat-pill-cartoon stat-heat">热度 {{ attraction.heat_score|default:'暂无' }}</span>
+                    <span class="detail-stat-pill-cartoon stat-price">{{ attraction.actual_price }}</span>
+                </div>
+            </div>
+
+            <div class="attraction-detail-favorite-cartoon">
+                <form method="post" action="{% url 'travel:toggle_favorite' attraction.poi_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="favorite-button-cartoon{% if is_favorited %} active{% endif %}">
+                        {% if is_favorited %}已收藏{% else %}收藏景点{% endif %}
+                    </button>
+                </form>
+                <span class="favorite-count-cartoon">{{ favorite_count }}人收藏</span>
+            </div>
+        </section>
+
+        {% if messages %}
+            <section class="message-list-cartoon">
+                {% for message in messages %}
+                    <p class="message-item-cartoon {{ message.tags }}">{{ message }}</p>
+                {% endfor %}
+            </section>
+        {% endif %}
+
+        <section class="attraction-detail-grid-cartoon">
+            <div class="attraction-detail-panel-cartoon">
+                <h2>景点信息</h2>
+                <dl class="attraction-info-list-cartoon">
+                    <div><dt>唯一标识</dt><dd>{{ attraction.poi_id }}</dd></div>
+                    <div><dt>评论数量</dt><dd>{{ attraction.comment_count|default:0|floatformat:0 }}</dd></div>
+                    <div><dt>是否推荐</dt><dd>{% if attraction.is_recommend %}是{% else %}否{% endif %}</dd></div>
+                    <div><dt>是否广告</dt><dd>{% if attraction.is_advertisement %}是{% else %}否{% endif %}</dd></div>
+                    <div><dt>距离</dt><dd>{{ attraction.distance|default:'暂无' }}</dd></div>
+                    <div><dt>坐标</dt><dd>{{ attraction.longitude }}, {{ attraction.latitude }}</dd></div>
+                    <div><dt>价格说明</dt><dd>{{ attraction.price_type_desc|default:'暂无' }}</dd></div>
+                </dl>
+            </div>
+
+            <div class="attraction-detail-panel-cartoon">
+                <h2>票价信息</h2>
+                <dl class="attraction-info-list-cartoon">
+                    <div><dt>实际票价</dt><dd>{{ attraction.actual_price }}</dd></div>
+                    <div><dt>市场票价</dt><dd>{{ attraction.market_price|default:'暂无' }}</dd></div>
+                    <div><dt>优惠价格</dt><dd>{{ attraction.preferential_price|default:'暂无' }}</dd></div>
+                    <div><dt>优惠描述</dt><dd>{{ attraction.preferential_desc|default:'暂无' }}</dd></div>
+                    <div><dt>价格类型</dt><dd>{{ attraction.price_type|default:'暂无' }}</dd></div>
+                </dl>
+            </div>
+        </section>
+
+        <section class="attraction-comment-panel-cartoon">
+            <div class="attraction-comment-heading-cartoon">
+                <div>
+                    <h2>用户评论</h2>
+                    <span class="attraction-comment-count-cartoon">{{ comments|length }} 条评论</span>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'travel:add_comment' attraction.poi_id %}" class="attraction-comment-form-cartoon">
+                {% csrf_token %}
+                <textarea name="content" rows="4" maxlength="500" placeholder="分享你对这个景点的看法、拍照建议或避坑提醒"></textarea>
+                <button type="submit">发表评论</button>
+            </form>
+
+            <div class="comment-list-cartoon">
+                {% for comment in comments %}
+                    <article class="comment-card-cartoon">
+                        <div class="attraction-comment-avatar-cartoon">{{ comment.user.username|first|upper }}</div>
+                        <div>
+                            <div class="comment-meta-cartoon">
+                                <strong>{{ comment.user.username }}</strong>
+                                <span>{{ comment.created_at|date:'Y-m-d H:i' }}</span>
+                            </div>
+                            <p>{{ comment.content|linebreaksbr }}</p>
+                        </div>
+                    </article>
+                {% empty %}
+                    <div class="empty-card-cartoon">
+                        <strong>还没有评论</strong>
+                        <span>成为第一个分享旅行想法的人。</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+{% endblock %}

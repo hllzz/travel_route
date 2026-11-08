@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}旅游规划平台{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}?v=20261024-planner-plaintext">
+</head>
+<body>
+<main class="app-shell">
+    <div class="dashboard-wrapper">
+        {% block navbar %}
+            <nav class="topbar-cartoon">
+                <div class="brand-lockup-cartoon">
+                    <span class="brand-mark-cartoon">TR</span>
+                    <div>
+                        <strong>旅游规划平台</strong>
+                        <span>Travel Route</span>
+                    </div>
+                </div>
+
+                <ul class="nav-menu-cartoon">
+                    <li>
+                        <a href="{% url 'accounts:home' %}"
+                           class="menu-item-cartoon{% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'home' %} active{% endif %}">首页</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'travel:attraction_list' %}"
+                           class="menu-item-cartoon{% if request.resolver_match.app_name == 'travel' %} active{% endif %}">旅游景点</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'guides:guide_list' %}"
+                           class="menu-item-cartoon{% if request.resolver_match.app_name == 'guides' %} active{% endif %}">旅游攻略</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'planner:planner' %}"
+                           class="menu-item-cartoon{% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'planner' %} active{% endif %}">ai路线规划助手</a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts:profile' %}"
+                           class="menu-item-cartoon{% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'profile' %} active{% endif %}">个人中心</a>
+                    </li>
+                </ul>
+
+                {% if user.is_authenticated %}
+                    <div class="user-control-cartoon">
+                        <div class="user-badge-cartoon">
+                            <span class="avatar-mini-cartoon">
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}的头像">
+                                {% else %}
+                                    {{ user.username|first|upper }}
+                                {% endif %}
+                            </span>
+                            <span class="username-text-cartoon">{{ user.username }}</span>
+                        </div>
+                        <form method="post" action="{% url 'accounts:logout' %}">
+                            {% csrf_token %}
+                            <button class="ghost-button-cartoon" type="submit">退出登录</button>
+                        </form>
+                    </div>
+                {% endif %}
+            </nav>
+        {% endblock %}
+
+        {% block content %}{% endblock %}
+    </div>
+</main>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

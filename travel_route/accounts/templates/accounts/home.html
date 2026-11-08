@@ -1,0 +1,77 @@
+{% extends 'accounts/base.html' %}
+
+{% block title %}首页 - 旅游规划平台{% endblock %}
+
+{% block content %}
+        <main class="dashboard-main-cartoon">
+            <section class="home-carousel-cartoon">
+                <div class="carousel-track-cartoon">
+                    {% for attraction in carousel_attractions %}
+                        <a class="carousel-slide-cartoon" href="{% url 'travel:attraction_detail' attraction.poi_id %}">
+                            {% if attraction.image %}
+                                <img src="{{ attraction.image }}" alt="{{ attraction.name }}">
+                            {% endif %}
+                            <div class="carousel-copy-cartoon">
+                                <p>{{ attraction.city_name }}{% if attraction.area %} · {{ attraction.area }}{% endif %}</p>
+                                <h1>{{ attraction.name }}</h1>
+                                <span>评分 {{ attraction.score|floatformat:1 }} · 热度 {{ attraction.heat_score|default:'暂无' }}</span>
+                            </div>
+                        </a>
+                    {% empty %}
+                        <a class="carousel-slide-cartoon empty-carousel-cartoon" href="{% url 'travel:attraction_list' %}">
+                            <div class="carousel-copy-cartoon">
+                                <p>Travel Route</p>
+                                <h1>旅游景点库</h1>
+                                <span>导入景点数据后，这里会展示热门目的地。</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="carousel-dots-cartoon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </section>
+
+            <section class="guess-section-cartoon">
+                <div class="section-heading-cartoon">
+                    <div>
+                        <p>Recommended</p>
+                        <h2>猜你喜欢</h2>
+                    </div>
+                    <a href="{% url 'travel:attraction_list' %}">查看全部景点</a>
+                </div>
+
+                <div class="guess-grid-cartoon">
+                    {% for attraction in recommend_attractions %}
+                        <a class="guess-card-cartoon" href="{% url 'travel:attraction_detail' attraction.poi_id %}">
+                            <div class="guess-cover-cartoon">
+                                {% if attraction.image %}
+                                    <img src="{{ attraction.image }}" alt="{{ attraction.name }}">
+                                {% else %}
+                                    <span>{{ attraction.name|first }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="guess-body-cartoon">
+                                <div class="guess-title-row-cartoon">
+                                    <h3>{{ attraction.name }}</h3>
+                                    <span>{{ attraction.score|floatformat:1 }}</span>
+                                </div>
+                                <p>{{ attraction.city_name }}{% if attraction.area %} · {{ attraction.area }}{% endif %}</p>
+                                {% if attraction.tags %}
+                                    <strong>{{ attraction.tags_display }}</strong>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% empty %}
+                        <div class="empty-card-cartoon">
+                            <strong>暂无推荐景点</strong>
+                            <span>请先导入 clean.csv 景点数据。</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </main>
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{# AI 路线规划页唯一模板：由 render_planner_page 渲染，同一页面服务空表单/校验回显/规划结果三种状态 #}
+
+{% block title %}AI路线规划助手 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="planner-hero-cartoon">
+            <div>
+                <p>LangGraph Agent</p>
+                <h1>AI路线规划助手</h1>
+                <span>输入目的地、预算、时间和偏好，系统会实时展示 LangGraph 执行过程并生成地图路线。</span>
+            </div>
+            {# data-history-open 为 JS 行为锚点：planner_stream.js 用属性选择器扫描并绑定“打开弹窗”，非跳转 #}
+            <button class="history-toggle-cartoon" type="button" data-history-open>最近规划</button>
+        </section>
+
+        <section class="planner-top-grid-cartoon">
+            <article class="planner-form-card-cartoon">
+                <div class="planner-card-heading-cartoon">
+                    <p>Route Inputs</p>
+                    <h2>规划条件</h2>
+                </div>
+
+                <div id="planner-form-errors" class="message-list-cartoon{% if not errors %} is-hidden{% endif %}">
+                    {% for error in errors %}
+                        <p class="message-item-cartoon error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                {# 表单双模式：action 为无 JS 时的原生同步提交；data-stream-url 存在时 JS preventDefault 改走 SSE 流式 #}
+                <form
+                    id="planner-form"
+                    class="planner-form-cartoon"
+                    method="post"
+                    action="{% url 'planner:planner' %}"
+                    data-stream-url="{% url 'planner:stream_route_plan' %}"
+                    data-detail-prefix="{% url 'planner:planner' %}"
+                >
+                    {% csrf_token %}
+                    <label>
+                        <span>目的地城市</span>
+                        <input type="text" name="city" value="{{ form_data.city }}" maxlength="50" placeholder="例如：北京">
+                    </label>
+                    <label>
+                        <span>旅行预算</span>
+                        <input type="text" name="budget" value="{{ form_data.budget }}" maxlength="80" placeholder="例如：人均 800 元">
+                    </label>
+                    <label>
+                        <span>出行时间</span>
+                        <input type="text" name="travel_time" value="{{ form_data.travel_time }}" maxlength="80" placeholder="例如：2天1晚">
+                    </label>
+                    <label>
+                        <span>旅行偏好</span>
+                        <textarea name="preferences" maxlength="300" rows="5" placeholder="例如：历史文化、亲子、拍照、低预算">{{ form_data.preferences }}</textarea>
+                    </label>
+                    <button id="planner-submit" class="primary-button planner-submit-cartoon" type="submit">开始规划</button>
+                </form>
+            </article>
+
+            <article class="planner-process-cartoon">
+                <div class="planner-card-heading-cartoon">
+                    <p>Graph Process</p>
+                    <h2>LangGraph规划过程</h2>
+                </div>
+                <div id="planner-step-list" class="planner-step-list-cartoon">
+                    {# 过程时间线服务端预渲染已有步骤；{{ step.status }} 决定配色(running/success/warning)，{% empty %} 处理初始空状态 #}
+                    {% for step in plan.process_steps %}
+                        <div class="planner-step-cartoon {{ step.status }}">
+                            <span>{{ forloop.counter }}</span>
+                            <div>
+                                <strong>{{ step.title }}</strong>
+                                <p>{{ step.description }}</p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div id="planner-step-empty" class="empty-comment-cartoon">
+                            <strong>等待规划</strong>
+                            <span>提交后会逐步显示输入解析、工具调用、路线生成和 AI 总结。</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+
+        <section class="planner-output-cartoon">
+            <article class="planner-summary-cartoon">
+                <div class="planner-card-heading-cartoon">
+                    <p>AI Result</p>
+                    <h2>路线结果</h2>
+                </div>
+                <p id="planner-error-text" class="planner-error-text-cartoon{% if not plan or plan.status != 'failed' %} is-hidden{% endif %}">
+                    {% if plan and plan.status == 'failed' %}{{ plan.error_message }}{% endif %}
+                </p>
+                {# 路线正文容器：初始显示占位文案，Markdown 结果由 JS 写入（初始态读 initial-final-plan 数据岛，流式态逐块追加） #}
+                <div id="planner-final-text" class="planner-final-text-cartoon{% if not plan or plan.status == 'failed' %} is-empty{% endif %}">
+                    {% if plan and plan.status != 'failed' %}
+                        正在渲染 Markdown 路线结果...
+                    {% else %}
+                        规划完成后会在这里实时生成路线说明。
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="planner-map-panel-cartoon">
+                <div class="planner-card-heading-cartoon">
+                    <p>Gaode Map</p>
+                    <h2>高德地图路线</h2>
+                </div>
+                {# 地图容器：实际标点连线由 route_map.js 消费 route-stop-data 数据岛完成 #}
+                <div id="planner-map" class="planner-map-cartoon">
+                    <div id="planner-map-placeholder" class="planner-map-placeholder-cartoon">
+                        <strong>等待路线点位</strong>
+                        <span>AI 生成景点顺序后会自动标点并连线。</span>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section id="planner-stop-grid" class="planner-stop-grid-cartoon{% if not map_stops %} is-hidden{% endif %}">
+            {% for stop in plan.stops.all %}
+                <article class="planner-stop-card-cartoon">
+                    <span>第 {{ stop.day_index }} 天 · 第 {{ stop.sequence }} 站</span>
+                    <h3>{{ stop.name }}</h3>
+                    <p>{{ stop.intro }}</p>
+                    <strong>{{ stop.longitude }}, {{ stop.latitude }}</strong>
+                </article>
+            {% endfor %}
+        </section>
+    </main>
+
+        {# 最近规划弹窗：默认 hidden，入口按钮与遮罩/关闭按钮分别带 data-history-open/close 控制显隐；条目为原生 <a> 详情链接 #}
+    <div id="planner-history-modal" class="planner-modal-cartoon" hidden>
+        <div class="planner-modal-mask-cartoon" data-history-close></div>
+        <section class="planner-modal-panel-cartoon">
+            <div class="planner-modal-heading-cartoon">
+                <div>
+                    <p>History</p>
+                    <h2>最近规划</h2>
+                </div>
+                <button class="ghost-button-cartoon" type="button" data-history-close>关闭</button>
+            </div>
+            <div id="planner-history-list" class="planner-history-list-cartoon">
+                {% for item in recent_plans %}
+                    <a href="{% url 'planner:route_plan_detail' item.id %}" class="planner-history-item-cartoon">
+                        <strong>{{ item.city }} · {{ item.travel_time }}</strong>
+                        <span>{{ item.created_at|date:'Y-m-d H:i' }} · {{ item.get_status_display }}</span>
+                    </a>
+                {% empty %}
+                    <div class="empty-comment-cartoon">
+                        <strong>暂无规划记录</strong>
+                        <span>提交一次路线规划后会显示在这里。</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    {# 数据岛：json_script 安全序列化 Python 对象为 JSON 供 JS 读取，是刷新后结果仍可见的静态通道（与 SSE 动态推送并行） #}
+    {{ map_stops|json_script:"route-stop-data" }}
+    {% with initial_final_plan=plan.final_plan|default:'' %}
+        {{ initial_final_plan|json_script:"initial-final-plan" }}
+    {% endwith %}
+    {# 脚本按依赖顺序加载：markdown-it → 高德SDK → route_map.js(挂全局) → planner_stream.js(最后主控) #}
+    <script src="{% static 'js/markdown-it.min.js' %}"></script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key={{ gaode_map_ak }}"></script>
+    <script src="{% static 'js/route_map.js' %}?v=20260707-stream"></script>
+    <script src="{% static 'js/planner_stream.js' %}?v=20261024-mdlocal"></script>
+{% endblock %}

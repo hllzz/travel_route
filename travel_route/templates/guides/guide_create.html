@@ -1,0 +1,92 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+
+{% block title %}发布旅游攻略 - 旅游规划平台{% endblock %}
+
+{% block content %}
+
+    <main class="dashboard-main-cartoon">
+        <section class="guide-hero-cartoon">
+            <div>
+                <p>Create Guide</p>
+                <h1>发布旅游攻略</h1>
+                <span>填写目的地、摘要和正文，保存后其他登录用户就能在攻略社区查看。</span>
+            </div>
+            <a class="guide-create-link-cartoon" href="{% url 'guides:guide_list' %}">返回攻略</a>
+        </section>
+
+        <section class="guide-form-panel-cartoon">
+            {% if errors %}
+                <div class="message-list-cartoon">
+                    {% for error in errors %}
+                        <p class="message-item-cartoon error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form class="guide-form-cartoon" method="post" action="{% url 'guides:guide_create' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <label>
+                    <span>攻略标题</span>
+                    <input type="text" name="title" value="{{ form_data.title }}" maxlength="120" placeholder="例如：北京两日文化路线">
+                </label>
+                <label>
+                    <span>目的地城市</span>
+                    <input type="text" name="city" value="{{ form_data.city }}" maxlength="50" placeholder="例如：北京">
+                </label>
+                <label class="guide-form-wide-cartoon">
+                    <span>攻略摘要</span>
+                    <input type="text" name="summary" value="{{ form_data.summary }}" maxlength="240" placeholder="一句话概括你的路线、预算或体验亮点">
+                </label>
+                <label class="guide-form-wide-cartoon">
+                    <span>攻略图片</span>
+                    <input class="guide-file-input-cartoon" type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+                </label>
+                <div class="guide-form-wide-cartoon guide-field-cartoon">
+                    <span>搜索关联景点</span>
+                    <div class="guide-attraction-picker-cartoon" data-guide-attraction-picker data-search-url="{% url 'guides:attraction_search' %}">
+                        <div class="guide-attraction-search-cartoon">
+                            <input type="text" data-attraction-keyword placeholder="输入景点名、城市、区域或标签">
+                            <button type="button" data-attraction-search>搜索</button>
+                        </div>
+                        <div class="guide-selected-attractions-cartoon" data-attraction-selected-list>
+                            {% for attraction in selected_attractions %}
+                                <div
+                                    class="guide-selected-attraction-cartoon"
+                                    data-selected-attraction
+                                    data-id="{{ attraction.id }}"
+                                    data-label="{{ attraction.city_name }}{% if attraction.area %} · {{ attraction.area }}{% endif %} · {{ attraction.name }}"
+                                >
+                                    <input type="hidden" name="attraction_ids" value="{{ attraction.id }}">
+                                    <span>{{ attraction.city_name }}{% if attraction.area %} · {{ attraction.area }}{% endif %} · {{ attraction.name }}</span>
+                                    <button type="button" data-remove-attraction>移除</button>
+                                </div>
+                            {% empty %}
+                                <p class="guide-selected-empty-cartoon" data-empty-selected>还未添加关联景点</p>
+                            {% endfor %}
+                        </div>
+                        <div class="guide-attraction-results-cartoon" data-attraction-results>
+                            <p>输入关键词后点击搜索，从结果中添加景点。</p>
+                        </div>
+                    </div>
+                </div>
+                <label class="guide-form-wide-cartoon">
+                    <span>输入关联景点</span>
+                    <input type="text" name="attraction_names" value="{{ form_data.attraction_names }}" maxlength="300" placeholder="可用逗号或顿号分隔多个景点">
+                </label>
+                <label class="guide-form-wide-cartoon">
+                    <span>攻略正文</span>
+                    <textarea name="content" rows="14" placeholder="写下行程安排、交通方式、门票预算、餐饮推荐和避坑提醒">{{ form_data.content }}</textarea>
+                </label>
+                <div class="guide-form-actions-cartoon">
+                    <button class="primary-button guide-submit-cartoon" type="submit">发布攻略</button>
+                    <a class="reset-button-cartoon" href="{% url 'guides:guide_list' %}">取消</a>
+                </div>
+            </form>
+        </section>
+    </main>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/guide_attraction_search.js' %}?v=20260707-search-fix1"></script>
+{% endblock %}
